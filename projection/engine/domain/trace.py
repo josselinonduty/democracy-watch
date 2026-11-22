@@ -3,7 +3,7 @@
 import dataclasses
 import hashlib
 
-from engine.domain.documents import Article
+from engine.domain.documents import Article, Outcome
 from engine.domain.operation import Operation
 from engine.domain.refusal import Reason
 from engine.domain.status import Status, status_of
@@ -66,6 +66,7 @@ class Projection:
     base: str | None = None
     decided_at: str | None = None  # date de la décision de l'amendement, si connue
     forced: Status | None = None  # statut imposé par la consolidation, sinon déduit de `reason`
+    outcome: Outcome | None = None  # sort réel de l'amendement, s'il est connu
 
     @property
     def applied(self) -> bool:

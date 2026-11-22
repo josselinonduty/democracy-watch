@@ -21,6 +21,7 @@ import textwrap
 from collections.abc import Iterator
 
 from engine.domain.refusal import Reason
+from engine.domain.status import Status
 from engine.domain.trace import Consolidation, Projection
 
 WIDTH = 64  # largeur maximale du libellé d'une instruction
@@ -72,12 +73,17 @@ def _article(number: str, projections: list[Projection], result_lines: int | Non
     return out
 
 
+UNVOTED = {Status.PREDICTED_FALLEN, Status.PREDICTED_ALIVE, Status.UNDETERMINED, Status.IGNORED}
+
+
 def render(consolidation: Consolidation) -> str:
     """Le graphe de tous les articles visés, puis les amendements sans article identifié."""
     results = {result.number: result for result in consolidation.articles}
     by_article: dict[str, list[Projection]] = {}
     unlocated = []
     for projection in consolidation.projections:
+        if projection.status in UNVOTED:  # ni appliqué ni refusé : il ne figure pas au graphe
+            continue
         if projection.article is None:
             unlocated.append(projection)
         else:

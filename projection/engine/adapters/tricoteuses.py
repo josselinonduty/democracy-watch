@@ -7,10 +7,23 @@ types, jamais à l'exécution (le moteur ne dépend pas de la source).
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from engine.domain.documents import Amendment, Article, Text
+from engine.domain.documents import Amendment, Article, Outcome, Text
 
 if TYPE_CHECKING:
     from projection.datasources import tricoteuses
+
+
+# Sorts de Tricoteuses (`sortAmendement`). Un sort absent de la table donne `None` : inconnu.
+OUTCOMES = {
+    "Adopté": Outcome.ADOPTED,
+    "Rejeté": Outcome.REJECTED,
+    "Tombé": Outcome.FALLEN,
+    "Retiré": Outcome.NOT_VOTED,
+    "Non soutenu": Outcome.NOT_VOTED,
+    "Irrecevable": Outcome.NOT_VOTED,
+    "Irrecevable 40": Outcome.NOT_VOTED,
+    "A discuter": Outcome.NOT_VOTED,
+}
 
 
 def article_from(article: tricoteuses.Article) -> Article:
@@ -33,4 +46,5 @@ def amendment_from(amendement: tricoteuses.Amendement) -> Amendment:
         parent_id=amendement.parent_uid,
         twin_group=amendement.id_identique,
         decided_at=amendement.date_sort,
+        outcome=OUTCOMES.get(amendement.sort or ""),
     )

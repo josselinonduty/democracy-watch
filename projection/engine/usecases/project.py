@@ -25,7 +25,7 @@ def decide(draft: Draft) -> Projection:
     args = (draft.amendment.number, draft.number)
     trace = (draft.instructions, GRAMMAR_VERSION, draft.base, draft.amendment.decided_at)
     if reason is not None or draft.article is None:
-        return Projection(*args, None, reason, detail, *trace)
+        return Projection(*args, None, reason, detail, *trace, outcome=draft.amendment.outcome)
     patch = draft.patch
     assert draft.tree is not None
     result = Result(
@@ -34,7 +34,7 @@ def decide(draft: Draft) -> Projection:
         deletes_article(patch),
         graft(draft.tree, patch, draft.text_uid).paragraphs,
     )
-    return Projection(*args, result, None, "", *trace)
+    return Projection(*args, result, None, "", *trace, outcome=draft.amendment.outcome)
 
 
 def project(
