@@ -1,6 +1,7 @@
 """Tests de `consolidate` sur de faux objets, puis bout en bout Tricoteuses."""
 
 import dataclasses
+import sys
 
 import pytest
 from datasources import tricoteuses
@@ -470,3 +471,27 @@ def test_end_to_end_tricoteuses_two_amendments():
     assert [p.applied for p in result.projections] == [True, True]
     (consolidated,) = result.articles
     assert (consolidated.number, consolidated.lines) == ("PREMIER", ("Premier alinéa semestriel.",))
+
+
+def test_version_is_replayed_in_order_and_records_applied_amendments():
+    result = consolidate(
+        [article()],
+        [amendment(*INSERT_AFTER_1, numero="CE1"), amendment(*SECOND, numero="CE2")],
+    )
+    tree = result.version.find("3")
+    assert tree.lines == tuple(result.articles[0].lines)
+    assert result.version.applied == ("UID-CE1", "UID-CE2")
+
+
+def test_amendment_refused_by_replay_is_refused_in_its_projection(monkeypatch):
+    from engine.domain.refusal import Refusal
+
+    module = sys.modules["engine.usecases.consolidate"]
+
+    def gone(version, reference, draft):
+        raise Refusal(Reason.TARGET_GONE, "cible disparue")
+
+    monkeypatch.setattr(module, "replay", gone)
+    result = consolidate([article()], [amendment(*FIRST)])
+    assert [p.reason for p in result.projections] == [Reason.TARGET_GONE]
+    assert result.articles == ()

@@ -26,6 +26,7 @@ from engine.domain.version import Version
 from engine.usecases.draft import Draft, draft
 from engine.usecases.merge import ConflictPolicy, oldest_wins
 from engine.usecases.project import decide
+from engine.usecases.replay import replay
 
 
 def _reject_sub_amendments(drafts: list[Draft]) -> list[Draft]:
@@ -91,6 +92,17 @@ def consolidate(
         for index, merged in zip(indices, on_conflict([drafts[i] for i in indices]), strict=True):
             drafts[index] = merged
 
+    reference = Version.of(text)
+    replayed: dict[str, Version] = {}
+    for number, indices in groups.items():
+        current = reference
+        for index in (i for i in indices if drafts[i].applicable):
+            try:
+                current, _ = replay(current, reference, drafts[index])
+            except Refusal as refusal:
+                drafts[index] = drafts[index].refused(refusal)
+        replayed[number] = current
+
     projections: list[Projection] = []
     for index, item in enumerate(drafts):
         if index in twins:  # le représentant est avant : sa projection existe déjà
@@ -109,9 +121,9 @@ def consolidate(
         if targeting and all(p.applied for p in targeting):
             group = [drafts[i] for i in groups[article.number]]
             articles.append(_article_result(article.number, group))
-    version = Version.of(text)
+    version = reference
     for result in articles:
-        tree = dataclasses.replace(version.find(result.number), paragraphs=result.paragraphs)
+        tree = replayed[result.number].find(result.number)
         group = (drafts[i].amendment for i in groups[result.number])
         version = version.replace(tree, *(a.id or a.number for a in group))
     return Consolidation(tuple(projections), tuple(articles), version)
