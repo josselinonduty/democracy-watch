@@ -11,6 +11,7 @@ from engine.domain.documents import Amendment, Article, Text
 from engine.domain.normalization import article_number, normalize
 from engine.domain.patch import Patch, apply
 from engine.domain.refusal import Reason, Refusal
+from engine.domain.tolerance import loosest
 from engine.domain.trace import Instruction, fingerprint
 from engine.domain.tree import ArticleTree, article_of
 from engine.reading import read
@@ -121,7 +122,8 @@ def _plan(instruction: Instruction, article: Article, origin: str) -> tuple[Inst
         return dataclasses.replace(instruction, reason=refusal.reason, detail=refusal.detail), ()
     patch = tuple(dataclasses.replace(splice, origin=origin) for splice in patch)
     before, after = _touched(article, patch)
-    return dataclasses.replace(instruction, before=before, after=after), patch
+    tolerance = loosest(splice.tolerance for splice in patch)
+    return dataclasses.replace(instruction, before=before, after=after, tolerance=tolerance), patch
 
 
 def draft(text: Text, amendment: Amendment) -> Draft:

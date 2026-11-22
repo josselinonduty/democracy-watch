@@ -7,6 +7,7 @@ from engine.domain.documents import Article
 from engine.domain.operation import Operation
 from engine.domain.refusal import Reason
 from engine.domain.status import Status, status_of
+from engine.domain.tolerance import Tolerance
 from engine.domain.tree import Paragraph
 from engine.domain.version import Version
 
@@ -21,6 +22,8 @@ class Instruction:
     detail: str = ""
     before: tuple[str, ...] = ()  # alinéas d'entrée touchés
     after: tuple[str, ...] = ()  # alinéas qui les remplacent
+    # palier de tolérance qui a retrouvé les mots cités ; hors comparaison (affichage)
+    tolerance: Tolerance | None = dataclasses.field(default=None, compare=False)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -68,6 +71,11 @@ class Projection:
     def applied(self) -> bool:
         """Vrai si l'amendement est appliqué (un résultat, pas de refus)."""
         return self.result is not None
+
+    @property
+    def tolerated(self) -> bool:
+        """Vrai si une instruction a été appliquée par tolérance : à relire en premier."""
+        return any(i.tolerance is not None for i in self.instructions)
 
     @property
     def status(self) -> Status:

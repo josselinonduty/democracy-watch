@@ -17,6 +17,8 @@ import dataclasses
 from collections.abc import Iterable
 from typing import cast
 
+from engine.domain.tolerance import Tolerance
+
 
 @dataclasses.dataclass(frozen=True)
 class Splice:
@@ -24,6 +26,7 @@ class Splice:
 
     `span` vide (début = fin) : insertion. `origin` : l'amendement qui écrit `new` (identifiant,
     sinon numéro), pour l'origine des mots du texte projeté ; il ne joue pas dans les conflits.
+    `tolerance` : palier utilisé pour retrouver les mots cités, pour la trace ; hors comparaison.
     """
 
     article: str
@@ -31,6 +34,7 @@ class Splice:
     new: str | tuple[str, ...]
     line: int | None = None
     origin: str = ""
+    tolerance: Tolerance | None = dataclasses.field(default=None, compare=False)
 
     @classmethod
     def on_article(cls, article: str, new: tuple[str, ...]) -> Splice:

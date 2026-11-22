@@ -27,16 +27,18 @@ def _rewrite_line(
     """Repère l'ancre dans les alinéas visés et réécrit l'alinéa qui la porte.
 
     Sur une cible de plusieurs alinéas, l'ancre est cherchée dans l'ensemble : présente dans un
-    seul, elle est unique et c'est celui-là qui est modifié. `rewrite(texte, début, fin)` rend le
+    seul, elle est unique et c'est celui-là qui est modifié. Le palier de tolérance éventuel est
+    porté par le splice. `rewrite(texte, début, fin)` rend le
     nouveau texte de l'alinéa.
     """
     indices = resolve(target, article.number, len(article.lines))
-    found, start, end = writing.find_anchor([article.lines[i] for i in indices], anchor)
-    index = indices[found]
+    found = writing.locate([article.lines[i] for i in indices], anchor)
+    index, start, end = indices[found.index], found.start, found.end
     text = rewrite(article.lines[index], start, end)
     if text == "":
         raise Refusal(Reason.OUT_OF_SCOPE, "alinéa vidé")
-    return (_splice_chars(article.number, index, article.lines[index], text),)
+    splice = _splice_chars(article.number, index, article.lines[index], text)
+    return (dataclasses.replace(splice, tolerance=found.tolerance),)
 
 
 @dataclasses.dataclass(frozen=True)
