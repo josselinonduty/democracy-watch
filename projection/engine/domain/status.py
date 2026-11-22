@@ -3,9 +3,9 @@
 Le statut ne remplace jamais `Reason` : il en est déduit (`status_of`), ou imposé par la
 consolidation quand elle sait mieux (série identique, sous-amendement).
 
-Seuls les statuts des amendements adoptés sont implémentés. Les statuts du RFC `predicted_fallen`,
-`predicted_alive`, `undetermined` et `ignored` sont reportés : ils supposent le sort de
-l'amendement, que le moteur ne reçoit pas encore.
+Les statuts des amendements non adoptés (`predicted_*`, `undetermined`, `ignored`) viennent du sort
+de l'amendement (`Amendment.outcome`) : ils sont imposés par la consolidation, jamais déduits d'une
+raison de refus.
 """
 
 import enum
@@ -15,7 +15,7 @@ from engine.domain.refusal import Reason
 
 
 class Status(enum.StrEnum):
-    """Statut d'un amendement adopté."""
+    """Statut d'un amendement."""
 
     APPLIED = "applied"
     IDENTICAL = "identical"
@@ -23,6 +23,10 @@ class Status(enum.StrEnum):
     NOT_PARSED = "not_parsed"
     PENDING = "pending"
     AMBIGUOUS = "ambiguous"
+    PREDICTED_FALLEN = "predicted_fallen"  # non adopté : serait tombé
+    PREDICTED_ALIVE = "predicted_alive"  # non adopté : aurait pu s'appliquer
+    UNDETERMINED = "undetermined"  # non adopté : pas de prédiction possible
+    IGNORED = "ignored"  # non voté (retiré, irrecevable…)
 
 
 STATUS_OF_REASON: dict[Reason, Status] = {

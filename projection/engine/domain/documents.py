@@ -4,6 +4,7 @@ La source de données (Tricoteuses…) construit ces types ; le moteur ne conna�
 """
 
 import dataclasses
+import enum
 
 from engine.domain.refusal import Reason, Refusal
 
@@ -41,6 +42,15 @@ class Text:
         return found[0]
 
 
+class Outcome(enum.StrEnum):
+    """Sort réel d'un amendement, indépendant de la source."""
+
+    ADOPTED = "adopted"
+    REJECTED = "rejected"
+    FALLEN = "fallen"
+    NOT_VOTED = "not_voted"  # retiré, non soutenu, irrecevable, pas encore discuté
+
+
 @dataclasses.dataclass(frozen=True)
 class Amendment:
     """Un amendement. Le champ `alinea` de la source n'est qu'un indice : il n'est pas repris.
@@ -48,7 +58,8 @@ class Amendment:
     `target_label` : article visé tel qu'écrit (« ART. 2 », « APRÈS ART. 3 »). `body_html` : le
     dispositif, un `<p>` par alinéa. `parent_id` : amendement modifié, pour un sous-amendement.
     `twin_group` : série d'amendements identiques votés ensemble.
-    `decided_at` : date de la décision (ISO, UTC), None si inconnue.
+    `decided_at` : date de la décision (ISO, UTC), None si inconnue. `outcome` : sort réel, None si
+    inconnu (l'amendement est alors traité comme adopté : l'appelant a déjà filtré).
     """
 
     number: str  # « CE11 », « 3 (Rect) » : pour l'affichage
@@ -58,3 +69,4 @@ class Amendment:
     parent_id: str | None = None
     twin_group: str | None = None
     decided_at: str | None = None
+    outcome: Outcome | None = None

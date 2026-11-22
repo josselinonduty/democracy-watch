@@ -1,7 +1,7 @@
 """Rendu en graphe d'une consolidation."""
 
 from engine.adapters.graph import render
-from engine.domain.documents import Amendment, Article, Text
+from engine.domain.documents import Amendment, Article, Outcome, Text
 from engine.usecases import consolidate
 
 TEXT = Text(
@@ -63,3 +63,16 @@ def test_oldest_wins_is_shown_with_dates_and_reason():
 def test_amendment_without_article_is_listed_apart():
     other = Amendment("CE9", "ART. 3 À 5", "<p>Supprimer l’alinéa 1.</p>")
     assert "hors article" in render(consolidate(TEXT, [other]))
+
+
+def test_render_leaves_out_amendments_that_were_not_voted():
+    text = Text("T", (Article("3", ("Un mot.",)),))
+    body = "<p>Rédiger ainsi l'alinéa 1 :</p><p>« Autre. »</p>"
+    amendments = [
+        Amendment("A1", "ART. 3", body, id="A1", outcome=Outcome.ADOPTED),
+        Amendment("A2", "ART. 3", body, id="A2", outcome=Outcome.REJECTED),
+        Amendment("A3", "ART. 3", body, id="A3", outcome=Outcome.NOT_VOTED),
+    ]
+    graph = render(consolidate(text, amendments))
+    assert "A1" in graph and "A2" not in graph and "A3" not in graph
+    assert "hors article" not in graph
