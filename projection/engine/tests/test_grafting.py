@@ -36,7 +36,7 @@ def test_untouched_nodes_are_shared_with_the_base():
         "T0",
     )
     assert after.paragraphs[1] is base.paragraphs[1]
-    assert after.id == base.id
+    assert after.paragraphs[0] is not base.paragraphs[0]
 
 
 def test_substituted_words_carry_the_amendment_and_others_keep_their_id():
@@ -144,3 +144,15 @@ def test_project_and_consolidate_trace_each_word_to_its_amendment():
     assert origins["lundi"] == "UID-CE2"
     assert origins["fait"] is None
     assert tuple(p.text for p in article.paragraphs) == article.lines
+
+
+def test_a_pure_deletion_does_not_steal_the_neighbouring_word_from_its_writer():
+    """A supprime « de » et l'espace, B change « la » en « le » : « le » est à B, pas à A."""
+    base = article_of("T0", Article("3", ("de la loi",)))
+    patch = (
+        Splice("3", (0, 3), "", 0, "CE1"),
+        Splice("3", (4, 5), "e", 0, "CE2"),
+    )
+    paragraph = graft(base, patch, "T0").paragraphs[0]
+    assert paragraph.text == "le loi"
+    assert by_text(paragraph)["le"].origin == Origin("T0", "CE2")

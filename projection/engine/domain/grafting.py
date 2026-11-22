@@ -83,9 +83,14 @@ def _edited(paragraph: Paragraph, text_uid: str, splices: list[Splice]) -> Parag
 
 
 def _origin_of(start: int, end: int, ranges: list[tuple[int, int, str]]) -> str:
-    """Origine d'un mot écrit : la modification dont la plage le recouvre ou le touche."""
+    """Origine d'un mot écrit : la modification qui le recouvre, sinon celle qui le touche.
+
+    Une suppression pure laisse une plage vide : elle ne l'emporte que si rien d'autre ne recouvre
+    le mot (deux mots fusionnés par la suppression de l'espace qui les séparait).
+    """
+    covering = [origin for lo, hi, origin in ranges if lo < end and start < hi]
     touching = [origin for lo, hi, origin in ranges if lo <= end and start <= hi]
-    return (touching or [origin for _, _, origin in ranges])[0]
+    return (covering or touching or [origin for _, _, origin in ranges])[0]
 
 
 def graft(article: ArticleTree, patch: Patch, text_uid: str) -> ArticleTree:
