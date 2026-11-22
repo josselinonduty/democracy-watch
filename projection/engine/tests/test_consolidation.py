@@ -495,3 +495,18 @@ def test_amendment_refused_by_replay_is_refused_in_its_projection(monkeypatch):
     result = consolidate([article()], [amendment(*FIRST)])
     assert [p.reason for p in result.projections] == [Reason.TARGET_GONE]
     assert result.articles == ()
+
+
+def test_article_results_are_read_from_the_version():
+    result = consolidate(
+        [article(), article("4")],
+        [
+            amendment(*SECOND, numero="CE1"),
+            amendment(*DELETE_ARTICLE, numero="CE2", article_vise="ART. 4"),
+        ],
+    )
+    for consolidated in result.articles:
+        tree = result.version.find(consolidated.number)
+        assert consolidated.paragraphs == tree.paragraphs
+        assert consolidated.lines == tree.lines
+    assert [r.deleted for r in result.articles] == [False, True]
