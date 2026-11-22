@@ -7,6 +7,8 @@ celui où se lisent leurs numéros d'alinéa.
 """
 
 import dataclasses
+import hashlib
+import json
 
 from engine.domain.documents import Text
 from engine.domain.normalization import normalize
@@ -53,6 +55,16 @@ class Version:
         """
         articles = tuple(article if a.id == article.id else a for a in self.articles)
         return Version(self.text_uid, articles, self, (*self.applied, *amendments))
+
+    def fingerprint(self) -> str:
+        """Empreinte du contenu seul : numéros d'article et texte des alinéas, sans identifiants.
+
+        Deux versions de même texte, quel que soit le chemin ou les amendements qui y mènent, ont
+        la même empreinte. Les articles sont triés par numéro : leur ordre ne compte pas.
+        """
+        articles = sorted((a.number, a.lines) for a in self.articles)
+        content = json.dumps(articles, ensure_ascii=False)  # sans ambiguïté de séparateur
+        return hashlib.sha256(content.encode()).hexdigest()[:16]
 
     def word(self, word_id: str) -> Word:
         """Le mot d'identifiant `word_id` ; `KeyError` s'il n'est pas dans cette version."""
