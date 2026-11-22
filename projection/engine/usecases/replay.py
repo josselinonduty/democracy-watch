@@ -22,6 +22,7 @@ from engine.domain.operation import Operation
 from engine.domain.patch import Patch, apply, conflicts, deletes_article
 from engine.domain.refusal import Reason, Refusal
 from engine.domain.target import remap, remap_insertion
+from engine.domain.tolerance import Tolerance, loosest
 from engine.domain.version import Version
 from engine.usecases.draft import Draft
 
@@ -38,6 +39,18 @@ def _plan(moved: Operation, current: Article) -> Patch:
         if refusal.reason is Reason.QUOTE_MISSING:
             raise Refusal(Reason.TARGET_GONE, refusal.detail) from None
         raise
+
+
+def _check_tolerance(patch: Patch, allowed: Tolerance | None) -> None:
+    """Refuse un palier de tolérance plus lâche que celui du dépôt.
+
+    Si les mots cités n'étaient exacts (ou tolérés) qu'au dépôt, un écart apparu depuis vient d'un
+    amendement adopté plus tôt, pas d'une coquille : la cible a disparu.
+    """
+    used = loosest(splice.tolerance for splice in patch)
+    order = list(Tolerance)
+    if used is not None and (allowed is None or order.index(used) > order.index(allowed)):
+        raise Refusal(Reason.TARGET_GONE, f"mots cités retrouvés seulement par tolérance ({used})")
 
 
 def replay(version: Version, reference: Version, draft: Draft) -> tuple[Version, Effect]:
@@ -66,6 +79,7 @@ def replay(version: Version, reference: Version, draft: Draft) -> tuple[Version,
         else:
             moved = operation.with_target(remap(operation.target, ref_tree, current))
         patch = _plan(moved, view)
+        _check_tolerance(patch, instruction.tolerance)
         patches.append(tuple(dataclasses.replace(s, origin=origin) for s in patch))
     for a, b in itertools.combinations(patches, 2):
         if any(conflicts(x, y) for x in a for y in b):

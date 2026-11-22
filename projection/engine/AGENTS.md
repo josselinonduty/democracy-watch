@@ -31,7 +31,11 @@ Interdits (vérifiés par `tests/test_architecture.py`) :
 - **Un patch n'a de sens que contre sa base** : pour changer de base, on réévalue l'opération,
   on ne décale jamais des positions.
 - **Exact ou absent** : une instruction refusée ou en conflit refuse tout l'amendement
-  (`Refusal`/`Reason`), jamais de résultat approximatif.
+  (`Refusal`/`Reason`), jamais de résultat approximatif. Seule nuance : l'ancre est cherchée
+  exactement, puis par les paliers de `domain/tolerance.py` (typographie, coquille), à condition
+  qu'un palier désigne un seul endroit ; il est tracé (`Instruction.tolerance`) et ne compte pas
+  dans les comparaisons. Les paliers peuvent confondre deux mots proches (« mairie »/« maire »,
+  « peut être »/« peut-être ») : d'où la trace, à relire en premier. Jamais de repli sur une position ni de choix entre candidats.
 - **Statut** : `Status` se déduit de `Reason` (`status_of`), ou est imposé par `consolidate`
   (`Projection.forced`) ; il ne remplace jamais `Reason`.
 - **Nouvelle couche ou nouvel import interdit** : mettre à jour `FORBIDDEN` dans
